@@ -1,6 +1,7 @@
 package per.meteor.aop.log.common.annotations;
 
 
+import per.meteor.aop.log.common.enums.ModuleType;
 import per.meteor.aop.log.common.enums.OperationType;
 
 import java.lang.annotation.*;
@@ -18,7 +19,7 @@ public @interface OperationLog {
      * 模块
      * @return ""
      */
-    String module() default "";
+    ModuleType module() default ModuleType.OTHER;
 
     /**
      * 操作类型

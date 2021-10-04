@@ -1,6 +1,5 @@
 package per.meteor.aop.log.common.utils;
 
-import cn.hutool.core.text.CharSequenceUtil;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -25,11 +24,9 @@ public class JsonUtil {
     /**
      *    加载速度太慢了，放在静态代码块中
      */
-    private static final ObjectMapper mapper;
-
-    private JsonUtil() {
-
-    }
+    public static final ObjectMapper mapper;
+    public static final String NUMBER_REGEX = "[0-9]+";
+    JsonUtil() {}
     /*
       设置一些通用的属性
      */
@@ -49,16 +46,16 @@ public class JsonUtil {
         mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     }
 
-    public static String toJSONString(Object obj) {
-        return obj != null ? toJSONString(obj, () -> "", false) : "";
+    public static String toJsonString(Object obj) {
+        return obj != null ? toJsonString(obj, () -> "", false) : "";
     }
 
-    public static String toFormatJSONString(Object obj) {
-        return obj != null ? toJSONString(obj, () -> "", true) : "";
+    public static String toFormatJsonString(Object obj) {
+        return obj != null ? toJsonString(obj, () -> "", true) : "";
     }
 
 
-    public static String toJSONString(Object obj, Supplier<String> defaultSupplier, boolean format) {
+    public static String toJsonString(Object obj, Supplier<String> defaultSupplier, boolean format) {
         try {
             if (obj == null) {
                 return defaultSupplier.get();
@@ -84,7 +81,7 @@ public class JsonUtil {
     }
 
     public static <T> T toJavaObject(Object obj, Class<T> tClass) {
-        return obj != null ? toJavaObject(toJSONString(obj), tClass, () -> null) : null;
+        return obj != null ? toJavaObject(toJsonString(obj), tClass, () -> null) : null;
     }
 
     public static <T> T toJavaObject(String value, Class<T> tClass, Supplier<T> defaultSupplier) {
@@ -104,7 +101,7 @@ public class JsonUtil {
     }
 
     public static <T> List<T> toJavaObjectList(Object obj, Class<T> tClass) {
-        return obj != null ? toJavaObjectList(toJSONString(obj), tClass, () -> null) : null;
+        return obj != null ? toJavaObjectList(toJsonString(obj), tClass, () -> null) : null;
     }
 
     public static <T> List<T> toJavaObjectList(String value, Class<T> tClass, Supplier<List<T>> defaultSupplier) {
@@ -121,7 +118,7 @@ public class JsonUtil {
     }
 
     public static <T> T jsonCopy(Object obj, Class<T> tClass) {
-        return obj != null ? toJavaObject(toJSONString(obj), tClass) : null;
+        return obj != null ? toJavaObject(toJsonString(obj), tClass) : null;
     }
 
     public static Map<String, Object> toMap(String value) {
@@ -137,11 +134,11 @@ public class JsonUtil {
             return defaultSupplier.get();
         }
         try {
-            return mapper.readValue(toJSONString(value), new TypeReference<Map<String, Object>>() {});
+            return mapper.readValue(toJsonString(value), new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
-            log.info("fail to convert" + toJSONString(value), e);
+            log.info("fail to convert" + toJsonString(value), e);
         }
-        return toMap(toJSONString(value), defaultSupplier);
+        return toMap(toJsonString(value), defaultSupplier);
     }
 
     public static Map<String, Object> toMap(String value, Supplier<Map<String, Object>> defaultSupplier) {
@@ -185,7 +182,7 @@ public class JsonUtil {
         if (value instanceof List) {
             return new ArrayList<>(Collections.singleton(value));
         }
-        return toList(toJSONString(value), defaultSuppler);
+        return toList(toJsonString(value), defaultSuppler);
     }
 
     public static long getLong(Map<String, Object> map, String key) {
@@ -193,7 +190,7 @@ public class JsonUtil {
             return 0L;
         }
         String valueStr = String.valueOf(map.get(key));
-        if (ObjectUtils.isEmpty(valueStr) || !CharSequenceUtil.isNumeric(valueStr)) {
+        if (ObjectUtils.isEmpty(valueStr) || !valueStr.matches(NUMBER_REGEX)) {
             return 0L;
         }
         return Long.parseLong(valueStr);
@@ -204,7 +201,7 @@ public class JsonUtil {
             return 0;
         }
         String valueStr = String.valueOf(map.get(key));
-        if (ObjectUtils.isEmpty(valueStr) || !CharSequenceUtil.isNumeric(valueStr)) {
+        if (ObjectUtils.isEmpty(valueStr) || !valueStr.matches(NUMBER_REGEX)) {
             return 0;
         }
         return Integer.parseInt(valueStr);

@@ -1,16 +1,15 @@
 package per.meteor.aop.log.aspect;
 
-import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.extra.servlet.ServletUtil;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -21,7 +20,9 @@ import org.springframework.web.servlet.HandlerMapping;
 import per.meteor.aop.log.common.annotations.OperationLog;
 import per.meteor.aop.log.common.utils.JsonUtil;
 import per.meteor.aop.log.domain.LogDomain;
+import per.meteor.aop.log.service.LogServiceAsync;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
@@ -35,10 +36,15 @@ import java.util.*;
  */
 @Aspect
 @Component
-@Slf4j
 public class SimpleLogAspect {
 
+    Logger logger = LoggerFactory.getLogger(SimpleLogAspect.class);
+
     private static final String SYSTEM_VERSION = "1.0";
+    private static final String LOCAL_IP = "0:0:0:0:0:0:0:1";
+
+    @Resource
+    private LogServiceAsync logServiceAsync;
 
     /**
      * 设置操作日志切入点 记录操作日志 在注解的位置切入代码
@@ -72,7 +78,8 @@ public class SimpleLogAspect {
                 .success(result, this::parseResponseInfo);
 
         // 根据自身操作对日志进行处理, 进行异步任务数据库存储，或存储到文件
-        log.info("{}", logDomain);
+        logServiceAsync.saveOperationLogAsync(logDomain);
+        logger.info("日志保存");
     }
 
     /**
@@ -94,7 +101,7 @@ public class SimpleLogAspect {
                     return log;
                 });
         // 根据自身操作对日志进行处理, 进行异步任务数据库存储，或存储到文件
-        log.info("{}", logDomain);
+        logServiceAsync.saveExceptionLogAsync(logDomain);
     }
 
     /**
@@ -119,11 +126,15 @@ public class SimpleLogAspect {
         logDomain.setRequestMethod(request.getMethod());
         logDomain.setRequestTime(now);
 
-        log.info("请求路径: {}  {}", request.getMethod(), request.getRequestURI());
-        log.info("请求参数:{}", getRequestParameters(joinPoint));
+        logger.info("请求路径: {}  {}", request.getMethod(), request.getRequestURI());
+        logger.info("请求参数:{}", getRequestParameters(joinPoint));
 
-        logDomain.setRequestHeader(JsonUtil.toJSONString(parseHeader()));
-        logDomain.setRequestIp(ServletUtil.getClientIP(request));
+        logDomain.setRequestHeader(JsonUtil.toJsonString(parseHeader()));
+        String clientIp = request.getRemoteAddr();
+        if (LOCAL_IP.equals(clientIp)) {
+            clientIp = "127.0.0.1";
+        }
+        logDomain.setRequestIp(clientIp);
         // 从切面织入点处通过反射机制获取织入点处的方法
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String className = joinPoint.getTarget().getClass().getName();
@@ -143,7 +154,7 @@ public class SimpleLogAspect {
      */
     private LogDomain parseResponseInfo(Object result, LogDomain logDomain) {
 
-        logDomain.setResponseBody(JsonUtil.toJSONString(result));
+        logDomain.setResponseBody(JsonUtil.toJsonString(result));
         LocalDateTime requestTime = logDomain.getRequestTime();
         long timeConsuming = requestTime == null ? 0 : Duration.between(requestTime, LocalDateTime.now()).toMillis();
         logDomain.setRequestTimeConsuming(timeConsuming + "ms");
@@ -217,7 +228,7 @@ public class SimpleLogAspect {
         OperationLog annotation = method.getAnnotation(OperationLog.class);
         if (null != annotation) {
             logDomain.setOperationModule(annotation.module());
-            logDomain.setOperationType(annotation.operationType().name());
+            logDomain.setOperationType(annotation.operationType());
             logDomain.setOperationDesc(annotation.desc());
             logDomain.setOperationUser("admin");
             logDomain.setSystemVersion(SYSTEM_VERSION);
@@ -260,7 +271,7 @@ public class SimpleLogAspect {
             for (int i = 0; i < names.length; i++) {
                 keyTypeMap.put(names[i], signature.getParameterTypes()[i]);
             }
-            params = JsonUtil.toJSONString(argsArrayToString(keyTypeMap, joinPoint.getArgs()));
+            params = JsonUtil.toJsonString(argsArrayToString(keyTypeMap, joinPoint.getArgs()));
         } else {
             // 获取一般请求参数
             HashMap<String, Object> paramsMap = new HashMap<>(16);
@@ -272,7 +283,7 @@ public class SimpleLogAspect {
             // 获取路径参数
             HashMap<?, ?> pathParamsMap = (HashMap<?, ?>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
             pathParamsMap.keySet().forEach(key -> paramsMap.put((String) key, pathParamsMap.get(key)));
-            params = CharSequenceUtil.sub(JsonUtil.toJSONString(paramsMap), 0, 2000);
+            params = JsonUtil.toJsonString(paramsMap);
         }
 
 

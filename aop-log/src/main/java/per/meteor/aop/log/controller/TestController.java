@@ -1,8 +1,9 @@
 package per.meteor.aop.log.controller;
 
-import cn.hutool.db.Page;
+import javafx.print.PageRange;
 import org.springframework.web.bind.annotation.*;
 import per.meteor.aop.log.common.annotations.OperationLog;
+import per.meteor.aop.log.common.enums.ModuleType;
 import per.meteor.aop.log.common.enums.OperationType;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,15 +15,15 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 public class TestController {
 
-    @OperationLog(module = "测试", operationType = OperationType.OTHER, desc = "测试")
+    @OperationLog(module = ModuleType.OTHER, operationType = OperationType.OTHER, desc = "测试")
     @GetMapping("/test01/{sex}")
     public void test01(@RequestParam String name, Integer age, @PathVariable String sex, HttpServletRequest request) {
         // pass
     }
 
-    @OperationLog(module = "测试", operationType = OperationType.OTHER, desc = "测试")
+    @OperationLog(module = ModuleType.OTHER, operationType = OperationType.OTHER, desc = "测试")
     @PostMapping("/test02")
-    public void test01(@RequestBody Page page, @RequestParam String name, HttpServletRequest request) {
+    public void test01(@RequestBody PageRange page, @RequestParam String name, HttpServletRequest request) {
         // pass
     }
 }
