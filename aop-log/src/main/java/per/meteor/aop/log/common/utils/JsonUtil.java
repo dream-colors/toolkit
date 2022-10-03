@@ -25,7 +25,7 @@ public class JsonUtil {
      *    加载速度太慢了，放在静态代码块中
      */
     public static final ObjectMapper mapper;
-    public static final String NUMBER_REGEX = "[0-9]+";
+    public static final String NUMBER_REGEX = "\\d+";
     JsonUtil() {}
     /*
       设置一些通用的属性

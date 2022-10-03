@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
  * @author meteor
  * @date 2021-10-04 16:00
  */
-public final class DatePattern {
+public abstract class DatePattern {
 
     DatePattern() {}
 

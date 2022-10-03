@@ -29,9 +29,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     /**
      * 处理jackJson的时区处理问题，默认ISO会缺少时间
+     *
+     * @return com.fasterxml.jackson.databind.ObjectMapper
      * @author meteor
      * @date 2021-10-02 2:39
-     * @return com.fasterxml.jackson.databind.ObjectMapper
      */
     @Bean
     public ObjectMapper jacksonObjectMapperCustomization() {
@@ -48,9 +49,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     /**
      * 添加自定义消息转换器
+     *
+     * @param converters 转换列表
      * @author meteor
      * @date 2021-10-02 2:41
-     * @param converters 转换列表
      */
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -60,9 +62,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     /**
      * 配置localDate转换器
+     *
+     * @return org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
      * @author meteor
      * @date 2021-10-02 2:39
-     * @return org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer enumCustomizer() {
